@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "loadbalancerName": {
+            "value": "ilb-infra-cus" 
+        },
+        "location": {
+            "value": "Central US" 
+        },
+        "infrasubnetId": {
+            "value": "/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-dr-cus/providers/Microsoft.Network/virtualNetworks/vnet-cus/subnets/snet-10-22-0-0_24-infra-cus"
+        },
+        "lbfrontEndName": {
+            "value": "ilbfrontend"
+        },
+        "lbbackendPoolName": {
+            "value": "ilbbackendpool1"
+        },
+        "privateipAddress": {
+            "value": "10.22.0.20"
+        },
+        "lbprobeName": {
+            "value": "ilbprobe1"
+        },
+        "lbruleName": {
+            "value": "ilbrule1"
+        }
+    }
+}
