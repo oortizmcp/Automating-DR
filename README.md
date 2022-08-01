@@ -11,6 +11,9 @@ This project is a proof of concept on how to implement a Disaster Recovery solut
 ## Infrastructure
 Inside the Infra folder, you will can see the infrastructure that is used in this project. Bicep file calls all modules needed to create the resources in Azure which will be described below.
 
+![image](https://user-images.githubusercontent.com/53305878/182245064-65468d0f-6589-4e2e-8903-e603b1764820.png)
+
+
 1. <u>**Storage Accounts (2)**</u> - One storage account in each region to be used for cache and replication when performing the Failover.
 
 2. <u>**Recovery Vault (1)**</u> - The recovery vault that will be used for backup and replication of items. If you intent to use the same recovery vault for both backups and recovery. You can use the same recovery vault for both (backup and recovery), but Vms will need to be in the same region as the recovery vault.
