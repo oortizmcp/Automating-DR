@@ -1,5 +1,5 @@
 param(
-    [string] $VaultSubscriptionId = 'b41216a4-a3f7-4165-b575-c594944d46d1',
+    [string] $VaultSubscriptionId = '<your Subscription Id>',
     [string] $VaultResourceGroupName ='rg-dr-eus2',
     [string] $VaultName = 'asr-eus2',
     [string] $PrimaryRegion = 'eastus2',
@@ -7,7 +7,7 @@ param(
     [string] $RecoveryPlanName = 'FullRecovery',
     [string] $vmsResourceGroup = 'rg-dr-eus2',
     [string] $drvmsresourceGroup = 'rg-dr-cus',
-    [string] $RecoveryStagingStorageAccount = '/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-dr-cus/providers/Microsoft.Storage/storageAccounts/saomni52kfceg36bmx4cus',
+    [string] $RecoveryStagingStorageAccount = '<storage account id in the target region>',
     [string] $RecoveryReplicaDiskAccountType = 'Standard_LRS',
     [string] $RecoveryTargetDiskAccountType = 'Standard_LRS'
     )
