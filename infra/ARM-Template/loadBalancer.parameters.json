@@ -9,7 +9,7 @@
             "value": "Central US" 
         },
         "infrasubnetId": {
-            "value": "/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-dr-cus/providers/Microsoft.Network/virtualNetworks/vnet-cus/subnets/snet-10-22-0-0_24-infra-cus"
+            "value": "/subscriptions/<your subscription id>/resourceGroups/rg-dr-cus/providers/Microsoft.Network/virtualNetworks/vnet-cus/subnets/snet-10-22-0-0_24-infra-cus"
         },
         "lbfrontEndName": {
             "value": "ilbfrontend"
