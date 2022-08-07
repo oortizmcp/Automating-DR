@@ -5,8 +5,8 @@ param(
     [string] $PrimaryRegion = 'eastus2',
     [string] $RecoveryRegion = 'centralus',
     [string] $RecoveryPlanName = 'FullRecovery',
-    [string] $sourcevmsresourceGroup = 'rg-dr-cus',
-    [string] $drvmsresourceGroup = 'rg-dr-eus2',
+    [string] $sourcevmsresourceGroup = 'rg-dr-eus2',
+    [string] $drvmsresourceGroup = 'rg-dr-cus',
     [string] $PrimaryStagingStorageAccount = '/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-dr-eus2/providers/Microsoft.Storage/storageAccounts/saomni52kfceg36bmx4eus2',
     [string] $RecoveryReplicaDiskAccountType = 'Standard_LRS',
     [string] $RecoveryTargetDiskAccountType = 'Standard_LRS'
@@ -36,7 +36,7 @@ Set-AzRecoveryServicesAsrVaultContext -vault $vault
     }
     $sourcevmIds
 
-    # Destination (Secondary region) VM Id where will failback from
+    # DR (DR Region) VmId
     $drvmIds = New-Object System.Collections.ArrayList
     foreach ($vm in $vmNames)
     {
@@ -45,23 +45,20 @@ Set-AzRecoveryServicesAsrVaultContext -vault $vault
     }
     $drvmIds
 
+
 # Look up the protection container mapping to be used for the enable replication.
 function Get-ContainerDetails
 {
     try {
-        # If created replication plan from portal. Azure creates a Fabric by default with name like line 55. 
-        # Otherwise, if created using a script, you can use line 54 to check for Fabric created
-        # $priFabric = (Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $RecoveryRegion -or $_.FabricSpecificDetails.Location -like $RecoveryRegion.Replace(' ', '')}).Name
-        $priFabric = Get-AzRecoveryServicesAsrFabric -Name "asr-a2a-default-$RecoveryRegion"
+        $priFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $RecoveryRegion -or $_.FabricSpecificDetails.Location -like $RecoveryRegion.Replace(' ', '')}
         $priContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $priFabric
-        # Same as line 52 but with recovery Fabric. Use line 58 or 59 depending on your scenario.
-        # $recFabric = (Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $PrimaryRegion -or $_.FabricSpecificDetails.Location -like $PrimaryRegion.Replace(' ', '')}).Name
-        $recFabric = Get-AzRecoveryServicesAsrFabric -Name "asr-a2a-default-$PrimaryRegion"
+        $recFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $PrimaryRegion -or $_.FabricSpecificDetails.Location -like $PrimaryRegion.Replace(' ', '')}
+        
         $recContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $recFabric
         $reverseContainerMapping = Get-AzRecoveryServicesAsrProtectionContainerMapping -ProtectionContainer $recContainer | Where-Object {$_.TargetProtectionContainerId -like $priContainer.Id}
-
+        
         $priContainerRPIS = Get-AzRecoveryServicesAsrReplicationProtectedItem -ProtectionContainer $priContainer
-        $rpisInContainer = $priContainerRPIS | Where-Object {$sourcevmIds -contains $_.ProviderSpecificDetails.FabricObjectId}
+        $rpisInContainer = $priContainerRPIS | Where-Object {$drvmIds -contains $_.ProviderSpecificDetails.FabricObjectId}
         $rpisInContainer
     }
     catch {
