@@ -62,6 +62,24 @@ resource vm 'Microsoft.Compute/virtualMachines@2021-11-01' = [for i in range(0, 
   }
 }]
 
+resource vmextensions 'Microsoft.Compute/virtualMachines/extensions@2022-03-01' = [for i in range(0, numberofInstances): {
+  parent: vm[i]
+  name: '${vmnamePrefix}${i}InstallWebServer'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    autoUpgradeMinorVersion: true
+    typeHandlerVersion: '1.7'
+    settings: {
+      fileUris: [
+        'https://raw.githubusercontent.com/oortizmcp/Automating-DR/main/scripts/installWebServer.ps1'
+      ]
+      commandToExecute: 'powershell.exe -ExecutionPolicy Unrestricted -File installWebServer.ps1'
+    }
+  }
+}]
+
 output vmNames array = [for i in range(0, numberofInstances) :{
   name: vm[i].name
 }]
