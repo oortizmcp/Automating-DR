@@ -112,21 +112,20 @@ $reverseReplicationJobs = New-Object System.Collections.ArrayList
         # Prepare disk configuration.
     $diskList = New-Object System.Collections.ArrayList
     $osDisk = New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $drVM.StorageProfile.OsDisk.ManagedDisk.Id `
-        -LogStorageAccountId $RecoveryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
+        -LogStorageAccountId $RecoveryStagingStorageAccount -ManagedDisk -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
         -RecoveryResourceGroupId  $sourceVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType          
     $diskList.Add($osDisk)
     
     foreach($dataDisk in $drVM.StorageProfile.DataDisks)
     {
         $disk = New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $dataDisk.ManagedDisk.Id `
-            -LogStorageAccountId $RecoveryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
+            -LogStorageAccountId $RecoveryStagingStorageAccount -ManagedDisk -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
             -RecoveryResourceGroupId  $sourceVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType
-        $diskList.Add($disk)
     }
     
     $message = 'Reverse replication being triggered'
     Write-Output $message
-    $reverseReplicationJob = Update-AzRecoveryServicesAsrProtectionDirection -AzureToAzure -LogStorageAccountId $RecoveryStagingStorageAccount  -ProtectionContainerMapping             $reverseContainerMapping  -RecoveryResourceGroupId $sourceVmResourceGroupId -ReplicationProtectedItem $rpi
+    $reverseReplicationJob = Update-AzRecoveryServicesAsrProtectionDirection -AzureToAzure -LogStorageAccountId $RecoveryStagingStorageAccount -ProtectionContainerMapping $reverseContainerMapping -RecoveryResourceGroupId $sourceVmResourceGroupId -ReplicationProtectedItem $rpi
     $reverseReplicationJobs.Add($reverseReplicationJob)
     }
 

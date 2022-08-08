@@ -87,5 +87,3 @@ output vmNames array = [for i in range(0, numberofInstances) :{
 output vmIds array = [for i in range(0, numberofInstances): {
   id: vm[i].id
 }]
-
-

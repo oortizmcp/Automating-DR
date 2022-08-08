@@ -123,14 +123,14 @@ $reverseReplicationJobs = New-Object System.Collections.ArrayList
         # Prepare disk configuration.
         $diskList =  New-Object System.Collections.ArrayList
         $osDisk =    New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $sourceVM.StorageProfile.OsDisk.ManagedDisk.Id `
-            -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
+            -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
             -RecoveryResourceGroupId  $currentVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType          
         $diskList.Add($osDisk)
         
         foreach($dataDisk in $sourceVM.StorageProfile.DataDisks)
         {
             $disk = New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $dataDisk.ManagedDisk.Id `
-                -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
+                -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
                 -RecoveryResourceGroupId  $currentVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType
             $diskList.Add($disk)
         }
