@@ -47,7 +47,7 @@
       "adminuserName":{
         "reference": {
             "keyVault": {
-                "id": "/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-spoke-bicepdemo-vnet-dev-use2/providers/Microsoft.KeyVault/vaults/oovbicepdemo"
+                "id": "/subscriptions/<your subscription Id>/resourceGroups/rg-spoke-bicepdemo-vnet-dev-use2/providers/Microsoft.KeyVault/vaults/oovbicepdemo"
             },
             "secretName": "adminuserName"
         }
@@ -55,7 +55,7 @@
       "adminusernamePassword":{
           "reference": {
               "keyVault": {
-                  "id": "/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-spoke-bicepdemo-vnet-dev-use2/providers/Microsoft.KeyVault/vaults/oovbicepdemo"
+                  "id": "/subscriptions/<your subscription Id>/resourceGroups/rg-spoke-bicepdemo-vnet-dev-use2/providers/Microsoft.KeyVault/vaults/oovbicepdemo"
               },
               "secretName": "adminusernamePassword"
           }
@@ -73,10 +73,10 @@
         ]
       },
       "identity":{
-        "value": "/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourcegroups/rg-dr-eus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/mi-dr-demo"
+        "value": "/subscriptions/<your subscription Id>/resourcegroups/rg-dr-eus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/mi-dr-demo"
       },
       "targetResourceGroupId":{
-        "value": "/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-dr-cus"
+        "value": "/subscriptions/<your subscription Id>/resourceGroups/rg-dr-cus"
       }
     }
   }
