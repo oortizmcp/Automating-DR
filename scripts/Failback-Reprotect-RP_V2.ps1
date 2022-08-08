@@ -66,7 +66,7 @@ $rpisInContainer
 $message = 'Triggering failover for Recovery Plan - ' + $RecoveryPlanName
 Write-Output $message
 $job = Start-AzRecoveryServicesAsrUnPlannedFailoverJob -RecoveryPlan $RecoveryPlan -Direction RecoveryToPrimary
-$failoverJob.Add($job)
+$job
 
     do {
         Start-Sleep -Seconds 30
