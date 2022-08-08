@@ -2,8 +2,8 @@ param(
     [string] $VaultSubscriptionId = 'b41216a4-a3f7-4165-b575-c594944d46d1',
     [string] $VaultResourceGroupName ='rg-dr-eus2',
     [string] $VaultName = 'asr-eus2',
-    [string] $PrimaryRegion = 'eastus2',
-    [string] $RecoveryRegion = 'centralus',
+    [string] $PrimaryRegion = 'East US2',
+    [string] $RecoveryRegion = 'Central US',
     [string] $RecoveryPlanName = 'FullRecovery',
     [string] $sourcevmsresourceGroup = 'rg-dr-eus2',
     [string] $drvmsresourceGroup = 'rg-dr-cus',
@@ -36,7 +36,7 @@ Set-AzRecoveryServicesAsrVaultContext -vault $vault
     }
     $sourcevmIds
 
-    # DR (DR Region) VmId
+    # Destination (Secondary region) where the vms currently are
     $drvmIds = New-Object System.Collections.ArrayList
     foreach ($vm in $vmNames)
     {
@@ -47,41 +47,16 @@ Set-AzRecoveryServicesAsrVaultContext -vault $vault
 
 
 # Look up the protection container mapping to be used for the enable replication.
-function Get-ContainerDetails
-{
-    try {
-        $priFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $RecoveryRegion -or $_.FabricSpecificDetails.Location -like $RecoveryRegion.Replace(' ', '')}
-        $priContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $priFabric
-        $recFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $PrimaryRegion -or $_.FabricSpecificDetails.Location -like $PrimaryRegion.Replace(' ', '')}
-        
-        $recContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $recFabric
-        $reverseContainerMapping = Get-AzRecoveryServicesAsrProtectionContainerMapping -ProtectionContainer $recContainer | Where-Object {$_.TargetProtectionContainerId -like $priContainer.Id}
-        
-        $priContainerRPIS = Get-AzRecoveryServicesAsrReplicationProtectedItem -ProtectionContainer $priContainer
-        $rpisInContainer = $priContainerRPIS | Where-Object {$drvmIds -contains $_.ProviderSpecificDetails.FabricObjectId}
-        $rpisInContainer
-    }
-    catch {
-        Write-Host "An Error Occurred" -ForegroundColor Red
-        Write-Host "Message: $_ Check the recContainer variable output and specify the container to be used by using indexing. This is usually the output where FriendlyName is equal to $PrimaryRegion. Example: Get-AzRecoveryServicesAsrReplicationProtectedItem -ProtectionContainer $ recContainer[2] on line 57" -ForegroundColor Red
-        break
-    }
-    if ( $null -eq $reverseContainerMapping ){
-        Write-Host "An Error Occurred" -ForegroundColor Red
-        $ErrorMessage = "Reverse Container Mapping id should also provide output where the TargetProtectionContainerId is similar to the output from priContainer.Id. If multiple priContainer outputs, use indexing at the end of recContainer[] to match correct Container in order to enable reprotection of VMs"
-        throw $ErrorMessage
-        break
-    }
-    else {
-        Write-Host "Replication Protected Items in Container"
-        $rpisInContainer
-        Write-Host "Reverse Container Mapping"
-        $reverseContainerMapping
-    }
-}
+$priFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $RecoveryRegion -or $_.FabricSpecificDetails.Location -like $RecoveryRegion.Replace(' ', '')}
+$priContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $priFabric
+$recFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $PrimaryRegion -or $_.FabricSpecificDetails.Location -like $PrimaryRegion.Replace(' ', '')}
 
-Get-ContainerDetails
+$recContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $recFabric
+$reverseContainerMapping = Get-AzRecoveryServicesAsrProtectionContainerMapping -ProtectionContainer $recContainer | Where-Object {$_.TargetProtectionContainerId -like $priContainer.Id}
 
+$priContainerRPIS = Get-AzRecoveryServicesAsrReplicationProtectedItem -ProtectionContainer $priContainer
+$rpisInContainer = $priContainerRPIS | Where-Object {$drvmIds -contains $_.ProviderSpecificDetails.FabricObjectId}
+$rpisInContainer
 
 # Setup the vault context.
 $message = 'Replication protected Items in Container:'
@@ -91,7 +66,8 @@ $rpisInContainer
 $message = 'Triggering failover for Recovery Plan - ' + $RecoveryPlanName
 Write-Output $message
 $job = Start-AzRecoveryServicesAsrUnPlannedFailoverJob -RecoveryPlan $RecoveryPlan -Direction RecoveryToPrimary
-$job
+$failoverJob.Add($job)
+
     do {
         Start-Sleep -Seconds 30
         $job = Get-AzRecoveryServicesAsrJob -Job $job
@@ -147,15 +123,15 @@ $reverseReplicationJobs = New-Object System.Collections.ArrayList
         # Prepare disk configuration.
         $diskList =  New-Object System.Collections.ArrayList
         $osDisk =    New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $sourceVM.StorageProfile.OsDisk.ManagedDisk.Id `
-            -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
-            -RecoveryResourceGroupId $currentVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType          
+            -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
+            -RecoveryResourceGroupId  $currentVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType          
         $diskList.Add($osDisk)
         
         foreach($dataDisk in $sourceVM.StorageProfile.DataDisks)
         {
             $disk = New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $dataDisk.ManagedDisk.Id `
-                -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
-                -RecoveryResourceGroupId $currentVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType
+                -LogStorageAccountId $PrimaryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
+                -RecoveryResourceGroupId  $currentVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType
             $diskList.Add($disk)
         }
         
@@ -165,7 +141,7 @@ $reverseReplicationJobs = New-Object System.Collections.ArrayList
         
         $message = 'Reverse replication triggered with job# {0} for VM {1}' -f $reverseReplciationJob.Name, $reverseReplciationJob.TargetObjectName
         Write-Output $message
-        $reverseReplicationJobs.Add($reverseReplciationJob)
+        $reverseReplicationJobs.Add($reverseReplciationJob)    
     }
 
     $message = 'Reverse replication has been triggered for all vms.'

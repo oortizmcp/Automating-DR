@@ -2,10 +2,10 @@ param(
     [string] $VaultSubscriptionId = 'b41216a4-a3f7-4165-b575-c594944d46d1',
     [string] $VaultResourceGroupName ='rg-dr-eus2',
     [string] $VaultName = 'asr-eus2',
-    [string] $PrimaryRegion = 'eastus2',
-    [string] $RecoveryRegion = 'centralus',
+    [string] $PrimaryRegion = 'East US2',
+    [string] $RecoveryRegion = 'Central US',
     [string] $RecoveryPlanName = 'FullRecovery',
-    [string] $vmsResourceGroup = 'rg-dr-eus2',
+    [string] $sourcevmsresourceGroup = 'rg-dr-eus2',
     [string] $RecoveryStagingStorageAccount = '/subscriptions/b41216a4-a3f7-4165-b575-c594944d46d1/resourceGroups/rg-dr-cus/providers/Microsoft.Storage/storageAccounts/saomni52kfceg36bmx4cus',
     [string] $RecoveryReplicaDiskAccountType = 'Standard_LRS',
     [string] $RecoveryTargetDiskAccountType = 'Standard_LRS'
@@ -35,40 +35,18 @@ Set-AzRecoveryServicesAsrVaultContext -vault $vault
 
     $sourceVmIds
 
-
 # Look up the protection container mapping to be used for the enable replication.
-function Get-ContainerDetails 
-{
-    try {
-        $priFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $PrimaryRegion -or $_.FabricSpecificDetails.Location -like $PrimaryRegion.Replace(' ', '')}
-        $priContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $priFabric
-        $recFab = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $RecoveryRegion -or $_.FabricSpecificDetails.Location -like $RecoveryRegion.Replace(' ', '')}
-        
-        $recContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $recFab
-        $reverseContainerMapping = Get-AzRecoveryServicesAsrProtectionContainerMapping -ProtectionContainer $recContainer | Where-Object {$_.TargetProtectionContainerId -like $priContainer.Id}
-        
-        $priContainerRPIS = Get-AzRecoveryServicesAsrReplicationProtectedItem -ProtectionContainer $priContainer
-        $rpisInContainer = $priContainerRPIS | Where-Object {$sourceVmIds -contains $_.ProviderSpecificDetails.FabricObjectId}
-        $rpisInContainer 
-    }
-    catch {
-        Write-Host "An Error Occurred" -ForegroundColor Red
-        Write-Host "Message: $_ Check the priContainer variable output. " -ForegroundColor Red
-        break
-    }
-    if ( $null -eq $reverseContainerMapping ){
-        Write-Host "An Error Occurred" -ForegroundColor Red
-        $ErrorMessage = "Message: $_ Check Reverse Container Mapping variable. If multiple priContainer outputs, use indexing at the end of priContainer.Id[] to match correct Container in order to enable reprotection of VMs"
-        throw $ErrorMessage
-        break
-    }
-    else {
-        $reverseContainerMapping
-    }
-}
+$priFabric = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $PrimaryRegion -or $_.FabricSpecificDetails.Location -like $PrimaryRegion.Replace(' ', '')}
+$priContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $priFabric
 
-Get-ContainerDetails
+$recFab = Get-AzRecoveryServicesAsrFabric | Where-Object {$_.FabricSpecificDetails.Location -like $RecoveryRegion -or $_.FabricSpecificDetails.Location -like $RecoveryRegion.Replace(' ', '')}
+$recContainer = Get-AzRecoveryServicesAsrProtectionContainer -Fabric $recFab
 
+$reverseContainerMapping = Get-AzRecoveryServicesAsrProtectionContainerMapping -ProtectionContainer $recContainer | Where-Object {$_.TargetProtectionContainerId -like $priContainer.Id}
+
+$priContainerRPIS = Get-AzRecoveryServicesAsrReplicationProtectedItem -ProtectionContainer $priContainer
+$rpisInContainer = $priContainerRPIS | Where-Object {$sourceVmIds -contains $_.ProviderSpecificDetails.FabricObjectId}
+$rpisInContainer
 
 # Setup the vault context.
 $message = 'Replication protected Items in Container:'
@@ -134,28 +112,28 @@ $reverseReplicationJobs = New-Object System.Collections.ArrayList
         # Prepare disk configuration.
     $diskList = New-Object System.Collections.ArrayList
     $osDisk = New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $drVM.StorageProfile.OsDisk.ManagedDisk.Id `
-        -LogStorageAccountId $RecoveryStagingStorageAccount -ManagedDisk -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
-        -RecoveryResourceGroupId $sourceVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType
+        -LogStorageAccountId $RecoveryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
+        -RecoveryResourceGroupId  $sourceVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType          
     $diskList.Add($osDisk)
     
     foreach($dataDisk in $drVM.StorageProfile.DataDisks)
     {
         $disk = New-AzRecoveryServicesAsrAzureToAzureDiskReplicationConfig -DiskId $dataDisk.ManagedDisk.Id `
             -LogStorageAccountId $RecoveryStagingStorageAccount -ManagedDisk  -RecoveryReplicaDiskAccountType $RecoveryReplicaDiskAccountType `
-            -RecoveryResourceGroupId $sourceVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType
+            -RecoveryResourceGroupId  $sourceVmResourceGroupId -RecoveryTargetDiskAccountType $RecoveryTargetDiskAccountType
         $diskList.Add($disk)
     }
     
     $message = 'Reverse replication being triggered'
     Write-Output $message
-    $reverseReplicationJob = Update-AzRecoveryServicesAsrProtectionDirection -AzureToAzure -LogStorageAccountId $RecoveryStagingStorageAccount -ProtectionContainerMapping $reverseContainerMapping -RecoveryResourceGroupId $sourceVmResourceGroupId -ReplicationProtectedItem $rpi
+    $reverseReplicationJob = Update-AzRecoveryServicesAsrProtectionDirection -AzureToAzure -LogStorageAccountId $RecoveryStagingStorageAccount  -ProtectionContainerMapping             $reverseContainerMapping  -RecoveryResourceGroupId $sourceVmResourceGroupId -ReplicationProtectedItem $rpi
     $reverseReplicationJobs.Add($reverseReplicationJob)
     }
 
     $message = 'Reverse replication has been triggered for all vms in Recovery Plan - ' + $RecoveryPlanName
     Write-Output $message
 
-    $DeploymentScriptOutputs['ReprotectedItemIds'] = $sourceVmIds -Join ','
+$DeploymentScriptOutputs['ReprotectedItemIds'] = $sourceVmIds -Join ','
 
-    $message = 'Reprotected Items Ids {0}' -f $DeploymentScriptOutputs['ReprotectedItemIds']
-    Write-Output $message
+$message = 'Reprotected Items Ids {0}' -f $DeploymentScriptOutputs['ReprotectedItemIds']
+Write-Output $message
