@@ -1,0 +1,104 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.7.4.23292",
+      "templateHash": "1990515628027108208"
+    }
+  },
+  "parameters": {
+    "loadbalancerName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "infrasubnetId": {
+      "type": "string"
+    },
+    "lbfrontEndName": {
+      "type": "string"
+    },
+    "lbbackendPoolName": {
+      "type": "string"
+    },
+    "privateipAddress": {
+      "type": "string"
+    },
+    "lbprobeName": {
+      "type": "string"
+    },
+    "lbruleName": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2020-11-01",
+      "name": "[parameters('loadbalancerName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "properties": {
+              "subnet": {
+                "id": "[parameters('infrasubnetId')]"
+              },
+              "privateIPAddress": "[parameters('privateipAddress')]",
+              "privateIPAllocationMethod": "Static"
+            },
+            "name": "[parameters('lbfrontEndName')]"
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "[parameters('lbbackendPoolName')]"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIpConfigurations', parameters('loadbalancerName'), parameters('lbfrontEndName'))]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadbalancerName'), parameters('lbbackendPoolName'))]"
+              },
+              "probe": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', parameters('loadbalancerName'), parameters('lbprobeName'))]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 80,
+              "backendPort": 80,
+              "idleTimeoutInMinutes": 15
+            },
+            "name": "[parameters('lbruleName')]"
+          }
+        ],
+        "probes": [
+          {
+            "properties": {
+              "protocol": "Tcp",
+              "port": 80,
+              "intervalInSeconds": 15,
+              "numberOfProbes": 2
+            },
+            "name": "[parameters('lbprobeName')]"
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "loadbalancerId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/loadBalancers', parameters('loadbalancerName'))]"
+    }
+  }
+}

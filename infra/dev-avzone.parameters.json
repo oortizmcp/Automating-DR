@@ -1,0 +1,82 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "primaryRegion":{
+        "value": "East US 2"
+      },
+      "secondaryRegion":{
+        "value": "Central US"
+      },
+      "eus2rgName": {
+        "value": "rg-dr-eus2"
+      },
+      "cusrgName":{
+        "value": "rg-dr-cus"
+      },
+      "eus2vnetName": {
+        "value": "vnet-eus2"
+      },
+      "natpipName":{
+        "value": "pip-out-natgw"
+      },
+      "natgwName":{
+        "value": "natgw-out-lb"
+      },
+      "cusvnetName": {
+        "value": "vnet-cus"
+      },
+      "loadbalancerName":{
+        "value": "ilb-infra-eus2"
+      },
+      "lbbackendpoolName":{
+        "value": "ilbbackendpool1"
+      },
+      "lbfrontendName":{
+        "value": "ilbfrontend"
+      },
+      "lbprobeName":{
+        "value": "ilbprobe1"
+      },
+      "lbruleName":{
+        "value": "ilbrule1"
+      },
+      "vmnamePrefix":{
+        "value": "vmwdrdev"
+      },
+      "adminuserName":{
+        "reference": {
+            "keyVault": {
+                "id": "/subscriptions/<your subscription Id>/resourceGroups/rg-spoke-bicepdemo-vnet-dev-use2/providers/Microsoft.KeyVault/vaults/oovbicepdemo"
+            },
+            "secretName": "adminuserName"
+        }
+      },
+      "adminusernamePassword":{
+          "reference": {
+              "keyVault": {
+                  "id": "/subscriptions/<your subscription Id>/resourceGroups/rg-spoke-bicepdemo-vnet-dev-use2/providers/Microsoft.KeyVault/vaults/oovbicepdemo"
+              },
+              "secretName": "adminusernamePassword"
+          }
+      },
+      "vaultName":{
+        "value": "asr-eus2"
+      },
+      "policyName":{
+        "value": "asrpolicy"
+      },
+      "protectableItems":{
+        "value": [
+          "vmwdrdev0",
+          "vmwdrdev1"
+        ]
+      },
+      "identity":{
+        "value": "/subscriptions/<your subscription Id>/resourcegroups/rg-dr-eus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/mi-dr-demo"
+      },
+      "targetResourceGroupId":{
+        "value": "/subscriptions/<your subscription Id>/resourceGroups/rg-dr-cus"
+      }
+    }
+  }
