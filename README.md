@@ -1,11 +1,14 @@
 # Automating-DR
-Omaha Azure User Group - Automating DR with Powershell and Automation Accounts
+[Omaha Azure User Group- August 2022 presentation](https://www.youtube.com/watch?v=hhZ4AhQQrQY&t=1313s) - Automating DR with Powershell and Automation Accounts.
 
-
-## Introduction
-# Overview
+## Overview
 
 This project is a proof of concept on how to implement a Disaster Recovery solution using Azure Site Recovery Services. For more information about Azure Site Recovery Services, please visit [Azure Site Recovery Documentation](https://docs.microsoft.com/en-us/azure/site-recovery/).
+
+## Video Tutorial
+For a step by step, please check the following videos:
+1. [Infra deployment Part 1](https://youtu.be/YVXBpVVF05k)
+2. [Failover/Failback Scripts Part 2](https://youtu.be/Fj9NnKGuZLQ)
 
 ***
 ## Infrastructure
@@ -14,7 +17,7 @@ Inside the Infra folder, you will can see the infrastructure that is used in thi
 ![image](https://user-images.githubusercontent.com/53305878/182245064-65468d0f-6589-4e2e-8903-e603b1764820.png)
 
 
-1. <u>**Storage Accounts (2)**</u> - One storage account in each region to be used for cache and replication when performing the Failover.
+1. <u>**Cache Storage Accounts (2)**</u> - One storage account in each region to be used for cache and replication when performing the Failover.
 
 2. <u>**Recovery Vault (1)**</u> - The recovery vault that will be used for backup and replication of items. If you intent to use the same recovery vault for both backups and recovery. You can use the same recovery vault for both (backup and recovery), but Vms will need to be in the same region as the recovery vault.
 
@@ -42,7 +45,7 @@ Login to Azure using CLI and run `az deployment group create` command to deploy 
 
 ***
 ## Scripts
-Inside the Scripts folder, you will can see the scripts that are used in this project to trigger Failover from Command Line.
+Inside the Scripts folder, you will can see the scripts that are used in this project to trigger Failover from Command Line. Besides login with the `az login` command, also make sure you login with `Connect-AzAccount` before running the Failover/Failback Scripts.
 
 1. Enable-Replication-AvZone.ps1 - This is deployed through bicep file in the module asrreplication (see main-avzone.bicep). This will create a site and a Fabric for both regions East US 2 and Central US.
 
@@ -50,5 +53,4 @@ Inside the Scripts folder, you will can see the scripts that are used in this pr
 
 3. If you are using Recovery Plans to trigger the failovers, you can use the scripts [**Test-Failover-RP.ps1**](https://github.com/oortizmcp/DisasterRecovery/blob/master/scripts/Test-Failover-RP.ps1) to test the failover. The [**Failover-Reprotect-RP_V2.ps1**](https://github.com/oortizmcp/DisasterRecovery/blob/master/scripts/Failover-Reprotect-RP_V2.ps1) script will trigger the failover and reprotect the VMs and the [**Failback-Reprotect-RP_V2.ps1**](https://github.com/oortizmcp/DisasterRecovery/blob/master/scripts/Failback-Reprotect-RP_V2.ps1) script will trigger the failback and reprotect the VMs based on Recovery Plans.
 
-4. When using Recovery Plans, you can configure a post action script to be run after the Vms fail over. For example, you can create a script that when the vms fail over, check if there is a Load Balancer created in the target region and if it doesnt exists, create it and add the vms to it. For this, you can configure an Automation Account Runbook in the Target Region and use the [**Create-InternalLoadBalancer.ps1**](https://github.com/oortizmcp/DisasterRecovery/blob/master/scripts/Create-InternalLB-TargetRegion.ps1) script to create the Load Balancer and add the Vms in the Recovery Plan. You can use a storage account to call a template. Check the ARM template under infra folder for an example of creating a load balancer listening to port 80
-
+4. When using Recovery Plans, you can configure a post action script to be run after the Vms fail over. For example, you can create a script that when the vms fail over, check if there is a Load Balancer created in the target region and if it doesnt exists, create it and add the vms to it. For this, you can configure an Automation Account Runbook in the Target Region and use the [**Create-InternalLoadBalancer.ps1**](https://github.com/oortizmcp/DisasterRecovery/blob/master/scripts/Create-InternalLB-TargetRegion.ps1) script to create the Load Balancer and add the Vms in the Recovery Plan. You can use a storage account to call a template. Check the ARM template under infra folder for an example of creating a load balancer listening to port 80.
