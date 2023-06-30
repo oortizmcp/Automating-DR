@@ -57,6 +57,7 @@ Inside the Scripts folder, you will can see the scripts that are used in this pr
 
 ## Application Gateway & Traffic Manager
 
+![image](https://github.com/oortizmcp/Automating-DR/assets/53305878/771fc672-5d7c-4e6a-9a3a-5d34eac6a024)
 
 If you are concern on how to Handle DNS after failing over to your Secondary Region in an automated fashion with Azure Site Recovery, you can use Azure Traffic Manager which is a DNS based Load Balancer to check the health of your resources and route the traffic from the non-healthy resource to the healthy resource. In order to attach the endpoint in traffic manager with a load balancer, this needs to be a public load balancer(not internal). However you can add an application gateway in front of your internal load balancer and then put traffic manager in front of your application gateway. Keep in mind you will need always a public facing endpoint so you can associate it with your traffic manager. Also keep in mind that After failing over to your secondary region, if you are using a public load balancer, it will give you an error because public load balancer is not supported for site recovery.
 
