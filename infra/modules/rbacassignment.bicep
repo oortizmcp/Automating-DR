@@ -24,7 +24,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing 
 
 // Create RBAC for granting vault managed identity with Storage contributor role 
 resource resourcegroupName_Microsoft_Authorization_rbacResourceName1 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
-  name: guid(resourcegroupId, principalId, contributorroleId)
+  name: guid(resourceGroup.id, principalId, contributorroleId)
   properties: {
     roleDefinitionId: contributorroleId
     principalId: principalId

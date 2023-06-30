@@ -17,24 +17,18 @@ param natgwName string
 @description('Vnet Name & properties in secondary region')
 param cusvnetName string
 
-@description('Name of the Load Balancer')
-param loadbalancerName string
-param lbfrontendName string
-param lbbackendpoolName string
-param lbprobeName string
-param lbruleName string
+@description('Name of the Application Gateway')
+param appgatewayName string
 
 @description('VM Prefix Name')
 param vmnamePrefix string
 param adminuserName string
+
+@secure()
 param adminusernamePassword string
 
 @description('Name of Vault')
 param vaultName string
-param policyName string
-
-@description('VMs to be protected')
-param protectableItems array
 
 @description('User Assigned Managed Identity that has Contributor Access to Source, Target, and resources that will be deployed')
 param identity string
@@ -69,7 +63,31 @@ module cusstorageAccount 'modules/storage.bicep' = {
 }
 output cusstorageaccount string = cusstorageAccount.outputs.storageaccountblobendpoint 
 
-// Create PublicIp for Load Balancer Outbound Connectivity for ASR replication in EUS2
+// Create NSG in EUS2 Region
+module eus2nsg 'modules/nsg.bicep' = {
+  scope: resourceGroup(eus2rgName)
+  name: 'eus2-nsg'
+  params:{
+    nsgName: 'nsg-eus2'
+    location: primaryRegion
+    securityruleName: 'AllowHTTPInbound'
+  }
+}
+output eus2nsgId string = eus2nsg.outputs.nsgId
+
+// Create NSG in CUS Region
+module cusnsg 'modules/nsg.bicep' = {
+  scope: resourceGroup(cusrgName)
+  name: 'cus-nsg'
+  params:{
+    nsgName: 'nsg-cus'
+    location: secondaryRegion
+    securityruleName: 'AllowHTTPInbound'
+  }
+}
+output cusnsgId string = cusnsg.outputs.nsgId
+
+// Create PublicIp for Outbound Connectivity for ASR replication in EUS2
 module lbpipnateus2 'modules/natpip.bicep' = {
   scope: resourceGroup(eus2rgName) 
   name: 'eus2-pip'
@@ -79,7 +97,7 @@ module lbpipnateus2 'modules/natpip.bicep' = {
   }
 }
 
-// Create PublicIp for Load Balancer Outbound Connectivity for ASR replication in CUS
+// Create PublicIp for Outbound Connectivity for ASR replication in CUS
 module lbpipnatcus 'modules/natpip.bicep' = {
   scope: resourceGroup(cusrgName) 
   name: 'cus-pip'
@@ -88,6 +106,28 @@ module lbpipnatcus 'modules/natpip.bicep' = {
     location: secondaryRegion
   }
 }
+
+// Create Public Ip for App Gateway in Primary Region (EUS2)
+module eus2appgwpip 'modules/appgwpip.bicep' = {
+  scope: resourceGroup(eus2rgName)
+  name: 'eus2-appgwpip'
+  params:{
+    pipName: 'pip-${appgatewayName}-eus2'
+    location: primaryRegion
+  }
+}
+output eus2appgwpip string = eus2appgwpip.outputs.pipId
+
+// Create Public IP for App Gateway in Secondary Region (CUS)
+module cusappgwpip 'modules/appgwpip.bicep' = {
+  scope: resourceGroup(cusrgName)
+  name: 'cus-appgwpip'
+  params:{
+    pipName: 'pip-${appgatewayName}-cus'
+    location: secondaryRegion
+  }
+}
+output cusappgwpip string = cusappgwpip.outputs.pipId
 
 // Create NAT Gateway for outbound EUS2
 module eus2Natgw 'modules/natgateway.bicep' = {
@@ -118,7 +158,7 @@ module cusNatgw 'modules/natgateway.bicep' = {
 }
 
 // Create EUS2 Vnet
-module eus2vnet 'modules/vnetnatgw.bicep' = {
+module eus2vnet 'modules/vnetnsg.bicep' = {
   scope: resourceGroup(eus2rgName)
   name: 'eus2-vnet'
   params: {
@@ -126,21 +166,24 @@ module eus2vnet 'modules/vnetnatgw.bicep' = {
     infrasubnetName: 'snet-10-21-0-0_24-infra-eus2'
     paassubnetaddressPrefix: '10.21.1.0/24'
     paassubnetName: 'snet-10-21-1.0_24-paas-eus2'
+    appgwsubnetName: 'snet-10-21-2.0_24-appgw-eus2'
+    appgwsubnetaddressPrefix: '10.21.2.0/24'
     vnetaddresPrefix: '10.21.0.0/18'
     vnetName: eus2vnetName
     location: primaryRegion
     natgatewayName: natgwName
+    nsgId: eus2nsg.outputs.nsgId
   }
   dependsOn: [
     eus2Natgw
+    eus2nsg
   ]
 }
 output eus2vnetId string = eus2vnet.outputs.vnetId
 
 
-
 // Create CUS Vnet
-module cusvnet 'modules/vnetnatgw.bicep' = {
+module cusvnet 'modules/vnetnsg.bicep' = {
   scope: resourceGroup(cusrgName)
   name: 'cus-vnet'
   params: {
@@ -148,52 +191,106 @@ module cusvnet 'modules/vnetnatgw.bicep' = {
     infrasubnetName: 'snet-10-22-0-0_24-infra-cus'
     paassubnetaddressPrefix: '10.22.1.0/24'
     paassubnetName: 'snet-10-22-64-1_24-paas-cus'
+    appgwsubnetName: 'snet-10-22-2.0_24-appgw-eus2'
+    appgwsubnetaddressPrefix: '10.22.2.0/24'
     vnetaddresPrefix: '10.22.0.0/18'
     vnetName: cusvnetName
     location: secondaryRegion
     natgatewayName: natgwName
+    nsgId: cusnsg.outputs.nsgId
   }
   dependsOn: [
     cusNatgw
+    cusnsg
   ]
 }
 output cusvnetId string = cusvnet.outputs.vnetId
 
 
-// Create Internal Load Balancer in Primary Region (EUS2)
-module eus2loadbalancer 'modules/internalloadBalancer.bicep' = {
+// Create Application Gateway in Primary Region (EUS2)
+module eus2appgw 'modules/appgw.bicep' = {
   scope: resourceGroup(eus2rgName)
-  name: 'eus2-loadbalancer'
+  name: 'eus2-appgw'
   params: {
-    infrasubnetId: eus2vnet.outputs.infrasubnetId
-    lbbackendPoolName: lbbackendpoolName
-    lbfrontEndName: lbfrontendName
-    lbprobeName: lbprobeName
-    lbruleName: lbruleName
-    loadbalancerName: loadbalancerName
-    location: primaryRegion 
-    privateipAddress: '10.21.0.20'
+    appgatewaybackendpoolName: 'appgw-backendpool01'
+    appgwbackendhttpsettingsName: 'appgw-poolsettings01'
+    appgwName: '${appgatewayName}-eus2'
+    appgwpipid: eus2appgwpip.outputs.pipId
+    appgwSubnetId: eus2vnet.outputs.appgwsubnetId
+    gatewayIpConfigName: 'gwIP01'
+    vmip1: '10.21.0.4'
+    vmip2: '10.21.0.5'
+    location: primaryRegion
   }
-  dependsOn: [
-    eus2vnet
-    eus2Natgw
+  dependsOn:[
+    eus2appgwpip
   ]
 }
-output eus2loadbalancerId string = eus2loadbalancer.outputs.loadbalancerId
+output eus2appgwId string = eus2appgw.outputs.appgwId
+
+// Create Application Gateway in Secondary Region (CUS)
+module cusappgw 'modules/appgw.bicep' = {
+  scope: resourceGroup(cusrgName)
+  name: 'cus-appgw'
+  params: {
+    appgatewaybackendpoolName: 'appgw-backendpool01'
+    appgwbackendhttpsettingsName: 'appgw-poolsettings01'
+    appgwName: '${appgatewayName}-cus'
+    appgwpipid: cusappgwpip.outputs.pipId
+    appgwSubnetId: cusvnet.outputs.appgwsubnetId
+    gatewayIpConfigName: 'gwIP01'
+    vmip1: '10.22.0.4'
+    vmip2: '10.22.0.5'
+    location: secondaryRegion
+  }
+  dependsOn:[
+    cusappgwpip
+  ]
+}
+output cusappgwId string = cusappgw.outputs.appgwId
+
+// Create Traffic Manager Profile
+module tmgrprofile 'modules/trafficmngr.bicep' = {
+  scope: resourceGroup(eus2rgName)
+  name: 'tmgr-profile'
+  params: {
+    trafficManagerName: 'tmp-${appgatewayName}-eus2'
+    trafficManagerStatus: 'Enabled'
+    trafficRoutingMethod: 'Priority'
+    trafficManagerProfileDnsConfigTTL: 30
+    trafficManagerProfileMonitorConfigPath: '/'
+    trafficManagerProfileMonitorConfigPort: 80
+    trafficManagerProfileMonitorConfigProtocol: 'HTTP'
+    trafficManagertoleratedNumberOfFailures: 3
+    trafficManagerIntervalInSeconds: 10
+    trafficManagerTimeoutInSeconds: 7
+    endpoints:[
+      {
+        Name: eus2appgwpip.name
+        Id: eus2appgwpip.outputs.pipId
+      }
+      {
+        Name: cusappgwpip.name
+        Id: cusappgwpip.outputs.pipId
+      }
+    ]
+  }
+  dependsOn: [
+    eus2appgwpip
+    cusappgwpip
+  ]
+}
 
 // Create NIC for Vms in primary region (EUS2)
-module eus2vmnics 'modules/vmnic-ilb.bicep' = {
+module eus2vmnics 'modules/vmnic.bicep' = {
   name: 'eus2-nics'
   params: {
     nicName: 'nic'
-    loadbalancerName: loadbalancerName
     location: primaryRegion
     subnetId: eus2vnet.outputs.infrasubnetId
-    backendPool: lbbackendpoolName
   }
   dependsOn: [
      eus2vnet
-     eus2loadbalancer
   ]
 }
 output vmnics array = eus2vmnics.outputs.vmnicsid
@@ -216,17 +313,13 @@ module eus2vms 'modules/vms-avzone.bicep' = {
   ]
 }
 
-// Create Recovery Service Vault (not needed after creation)
-module asrvault 'modules/siteRecovery.bicep' = {
-  scope: resourceGroup(eus2rgName)
-  name: 'eus2-asrvault'
+// Create Recovery Service Vault (CUS)
+module asrvault 'modules/siteRecovery-NoBackup.bicep' = {
+  scope: resourceGroup(cusrgName)
+  name: 'cus-asrvault'
   params: {
-    location: primaryRegion
+    location: secondaryRegion
     vaultName: vaultName
-    policyName: policyName
-    backupFabric: 'Azure'
-    vmsresourceGroup: eus2rgName
-    protectableItems: protectableItems
   }
   dependsOn: [
     eus2vms
@@ -266,14 +359,13 @@ module cusstorageRbac 'modules/rbacassignment.bicep' = {
   ]
 }
 
-
-// Enable Replication (EUS2)
+// Enable Replication for VMS (EUS2)
 module asrreplication 'modules/replication-avzone.bicep' = {
-  scope: resourceGroup(eus2rgName)
+  scope: resourceGroup(cusrgName)
   name: 'asr-replication'
   params: {
     identity: identity
-    location: primaryRegion
+    location: secondaryRegion
     primaryRegion: primaryRegion
     primaryStagingStorageAccount: eus2storageAccount.outputs.storageaccountId
     recoveryRegion: secondaryRegion
@@ -281,7 +373,7 @@ module asrreplication 'modules/replication-avzone.bicep' = {
     targetResourceGroupId: targetResourceGroupId
     targetVirtualNetworkId: cusvnet.outputs.infrasubnetId
     vaultName: vaultName
-    vaultResourceGroupName: eus2rgName
+    vaultResourceGroupName: cusrgName
     vaultSubscriptionId: subscription().subscriptionId
   }
   dependsOn: [
