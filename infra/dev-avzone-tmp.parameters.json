@@ -23,23 +23,11 @@
       "natgwName":{
         "value": "natgw-out-lb"
       },
+      "appgatewayName":{
+        "value": "appgw-infra"
+      },
       "cusvnetName": {
         "value": "vnet-cus"
-      },
-      "loadbalancerName":{
-        "value": "ilb-infra-eus2"
-      },
-      "lbbackendpoolName":{
-        "value": "ilbbackendpool1"
-      },
-      "lbfrontendName":{
-        "value": "ilbfrontend"
-      },
-      "lbprobeName":{
-        "value": "ilbprobe1"
-      },
-      "lbruleName":{
-        "value": "ilbrule1"
       },
       "vmnamePrefix":{
         "value": "vmwdrdev"
@@ -47,7 +35,7 @@
       "adminuserName":{
         "reference": {
             "keyVault": {
-                "id": "/subscriptions/<your subscription Id>/resourceGroups/<vault resource group>/providers/Microsoft.KeyVault/vaults/<vault name>"
+                "id": "/subscriptions/<sub id>/resourceGroups/<vault resource group>/providers/Microsoft.KeyVault/vaults/<vault Name>"
             },
             "secretName": "adminuserName"
         }
@@ -55,28 +43,19 @@
       "adminusernamePassword":{
           "reference": {
               "keyVault": {
-                  "id": "/subscriptions/<your subscription Id>/resourceGroups/<vault resource group>/providers/Microsoft.KeyVault/vaults/<vault name>"
+                  "id": "/subscriptions/<sub id>/resourceGroups/<vault resource group>/providers/Microsoft.KeyVault/vaults/<vault Name>"
               },
               "secretName": "adminusernamePassword"
           }
       },
       "vaultName":{
-        "value": "asr-eus2"
-      },
-      "policyName":{
-        "value": "asrpolicy"
-      },
-      "protectableItems":{
-        "value": [
-          "vmwdrdev0",
-          "vmwdrdev1"
-        ]
+        "value": "asr-cus"
       },
       "identity":{
-        "value": "/subscriptions/<your subscription Id>/resourcegroups/rg-dr-eus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/<user managed identity name>"
+        "value": "/subscriptions/<sub id>/resourcegroups/rg-dr-eus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/<user managed identity name>"
       },
       "targetResourceGroupId":{
-        "value": "/subscriptions/<your subscription Id>/resourceGroups/rg-dr-cus"
+        "value": "/subscriptions/<sub id>/resourceGroups/rg-dr-cus"
       }
     }
   }

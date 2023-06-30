@@ -68,3 +68,4 @@ resource loadBalancer 'Microsoft.Network/loadBalancers@2021-08-01' = {
 
 
 output loadbalancerId string = loadBalancer.id
+output loadbalancerPrivateIp string = loadBalancer.properties.frontendIPConfigurations[0].properties.privateIPAddress

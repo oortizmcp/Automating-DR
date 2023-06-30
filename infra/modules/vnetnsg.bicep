@@ -5,7 +5,14 @@ param infrasubnetName string
 param infrasubnetaddressPrefix string
 param paassubnetName string
 param paassubnetaddressPrefix string
+param appgwsubnetName string
+param appgwsubnetaddressPrefix string
+param natgatewayName string
+param nsgId string
 
+resource natgateway 'Microsoft.Network/natGateways@2021-05-01' existing = {
+  name: natgatewayName
+}
 
 // Create Vnet
 resource vnet 'Microsoft.Network/virtualNetworks@2021-08-01' = {
@@ -22,8 +29,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-08-01' = {
          name: infrasubnetName
          properties: {
           addressPrefix: infrasubnetaddressPrefix
+          natGateway: {
+            id: natgateway.id
+          }
+          networkSecurityGroup: {
+            id: nsgId
           }
          }
+       }
        {
          name: paassubnetName
          properties: {
@@ -41,6 +54,13 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-08-01' = {
            ]
          }
        }
+       {
+        name: appgwsubnetName
+        properties: {
+          addressPrefix: appgwsubnetaddressPrefix
+        }
+
+       }
       ]
   }
 }
@@ -49,4 +69,5 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-08-01' = {
 output vnetId string = vnet.id
 output infrasubnetId string = vnet.properties.subnets[0].id
 output paassubnetId string = vnet.properties.subnets[1].id
+output appgwsubnetId string = vnet.properties.subnets[2].id
 output vnetProperties object = vnet.properties
