@@ -63,4 +63,4 @@ If you are concern on how to Handle DNS after failing over to your Secondary Reg
 
 Traffic manager endpoint can be any internet facing service hosted inside or outside Azure. Hence, Traffic manager can route traffic that originates from public internet to a set of endpoints that are also internet facing. So, if you have endpoints that are inside a private network, like an internal Load balancer, or have users making DNS requests from such internal networks, then you can't use traffic manager to route this traffic.
 
-To deploy this type of architecture, you can use the [**main-avzone-tfmngr.bicep**] with the parameters file [**dev-avzone-tmp.parameters.json**]
+To deploy this type of architecture, you can use the [**main-avzone-tfmngr.bicep**] with the parameters file [**dev-avzone-tmp.parameters.json**] instead of the [**main-avzone.bicep].
